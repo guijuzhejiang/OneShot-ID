@@ -1,0 +1,20 @@
+runtime:
+  device: "cuda:1"
+  seed: 42
+
+models:
+  insightface_dir: "/media/zzg/GJ_disk01/pretrained_model/stable-diffusion-webui/models/insightface/models"
+  instantid_dir: "/media/zzg/GJ_disk01/pretrained_model/InstantX/InstantID"
+  sdxl_path: "/media/zzg/GJ_disk01/pretrained_model/stable-diffusion-webui/models/Stable-diffusion/SDXL/realvisxlV40_v40LightningBakedvae.safetensors"
+
+generation:
+  min_keep: 8
+  max_keep: 12
+  candidates_per_round: 12
+  max_rounds: 3
+
+validation:
+  similarity_threshold: 0.45
+
+output:
+  base_dir: "outputs"
