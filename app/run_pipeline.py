@@ -19,7 +19,7 @@ def main():
         default=None,
         help="Optional name for output directory",
     )
-    parser.add_argument("--seed", type=int, default=42, help="Random seed for generation")
+    parser.add_argument("--seed", type=int, default=None, help="Random seed (default: from config)")
     parser.add_argument(
         "--config",
         type=str,
