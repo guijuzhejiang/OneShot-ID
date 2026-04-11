@@ -12,11 +12,11 @@ def main():
     parser = argparse.ArgumentParser(
         description="OneShot-ID Identity-Consistent Generation & Validation"
     )
-    parser.add_argument("--input", type=str, required=True, help="Path to reference face image")
+    parser.add_argument("--input", type=str, default='input/Test_image.png', help="Path to reference face image")
     parser.add_argument(
         "--output_name",
         type=str,
-        default=None,
+        default='test0',
         help="Optional name for output directory",
     )
     parser.add_argument("--seed", type=int, default=None, help="Random seed (default: from config)")
