@@ -54,7 +54,7 @@ def _specs() -> list[PromptSpec]:
             prompt_id="dramatic_scream_side_light",
             positive_prompt=(
                 f"(slight head turn to the left:1.3), screaming with mouth wide open, intense anger, "
-                f"harsh side lighting, wind-blown hair, outdoor stormy background, dynamic motion blur, {q}"
+                f"harsh side lighting, outdoor stormy background, {q}"
             ),
             negative_prompt=SHARED_NEGATIVE_PROMPT,
             guidance_scale=5,
@@ -67,7 +67,7 @@ def _specs() -> list[PromptSpec]:
             prompt_id="neon_cyberpunk_exaggerated_laugh",
             positive_prompt=(
                 f"(right profile:1.3), exaggerated wide laugh, head thrown back, teeth visible, "
-                f"neon-lit alley, colored rim lights, wet pavement reflections, high contrast, {q}"
+                f"neon-lit alley, colored rim lights, wet pavement reflections, {q}"
             ),
             negative_prompt=SHARED_NEGATIVE_PROMPT,
             guidance_scale=5,
@@ -79,7 +79,7 @@ def _specs() -> list[PromptSpec]:
         PromptSpec(
             prompt_id="action_jump_midair",
             positive_prompt=(
-                f"mid-air jump, (viewed from below:1.3), joyful expressive, outdoor park setting, {q}"
+                f"jump, (viewed from below:1.3)', {q}"
             ),
             negative_prompt=SHARED_NEGATIVE_PROMPT,
             guidance_scale=5,
@@ -91,8 +91,7 @@ def _specs() -> list[PromptSpec]:
         PromptSpec(
             prompt_id="open_mouth_shout",
             positive_prompt=(
-                f"shouting loudly, (viewed from above:1.3), mouth fully open, visible throat, intense facial distortion, "
-                f"stage spotlight, dramatic contrast, audience blurred in background, {q}"
+                f"shouting loudly, (viewed from above:1.3), mouth fully open, {q}"
             ),
             negative_prompt=SHARED_NEGATIVE_PROMPT,
             guidance_scale=5,
@@ -104,7 +103,7 @@ def _specs() -> list[PromptSpec]:
         PromptSpec(
             prompt_id="head_shake_wild_laugh",
             positive_prompt=(
-                f"laughing wildly while shaking head side to side, exaggerated facial creases, wearing glasses, {q}"
+                f"laughing wildly , exaggerated facial creases, wearing glasses, {q}"
             ),
             negative_prompt=SHARED_NEGATIVE_PROMPT,
             guidance_scale=5,
@@ -116,7 +115,7 @@ def _specs() -> list[PromptSpec]:
         PromptSpec(
             prompt_id="crying",
             positive_prompt=(
-                f"weeping, sad expression, {q}"
+                f"crying, visible tears, tearful eyes, sad and emotional expression, {q}"
             ),
             negative_prompt=SHARED_NEGATIVE_PROMPT,
             guidance_scale=5,
@@ -141,8 +140,7 @@ def _specs() -> list[PromptSpec]:
         PromptSpec(
             prompt_id="theatrical_makeup_exaggerated",
             positive_prompt=(
-                f"in theatrical makeup, wearing a hat, exaggerated facial features (heavy blush), "
-                f"performing an over-the-top expression on stage under spotlights, dramatic shadows, {q}"
+                f"in theatrical makeup, wearing a hat, exaggerated facial features (heavy blush), dramatic shadows, {q}"
             ),
             negative_prompt=SHARED_NEGATIVE_PROMPT,
             guidance_scale=5,

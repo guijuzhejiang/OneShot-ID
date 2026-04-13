@@ -33,6 +33,7 @@ OneShot-ID/
 ## 2. 环境设置（本地）
 
 ```bash
+conda create -n py312_cu121 python=3.12 -y
 conda activate py312_cu121
 pip install -r requirements.txt
 ```

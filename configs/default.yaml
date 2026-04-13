@@ -7,7 +7,6 @@ models:
   instantid_dir: "/media/zzg/GJ_disk01/pretrained_model/InstantX/InstantID"
   controlnet_depth_path: "/media/zzg/GJ_disk01/pretrained_model/diffusers/controlnet-depth-sdxl-1.0-small"
   sdxl_path: "/media/zzg/GJ_disk01/pretrained_model/stable-diffusion-webui/models/Stable-diffusion/SDXL/juggernautXL_ragnarokBy.safetensors"
-#  sdxl_path: "/media/zzg/GJ_disk01/pretrained_model/stabilityai/stable-diffusion-xl-base-1.0"
 
 generation:
   min_keep: 8
@@ -19,7 +18,7 @@ generation:
   override_guidance: null
 
 validation:
-  similarity_threshold: 0.45
+  similarity_threshold: 0.4
 
 output:
   base_dir: "outputs"
