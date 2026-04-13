@@ -21,8 +21,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Validate generated candidate images against a reference face."
     )
-    parser.add_argument("--reference", type=str, required=True, help="Path to reference face image")
-    parser.add_argument("--candidate-dir", type=str, required=True, help="Directory containing candidate images")
+    parser.add_argument("--reference", type=str, default='input/Test_image.png', help="Path to reference face image")
+    parser.add_argument("--candidate-dir", type=str, default='outputs/runs/test0/candidates', help="Directory containing candidate images")
     parser.add_argument("--config", type=str, default="configs/default.yaml", help="Path to YAML config file")
     parser.add_argument(
         "--report-dir",

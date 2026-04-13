@@ -22,10 +22,10 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Generate identity-consistent candidate images from a reference face."
     )
-    parser.add_argument("--input", type=str, required=True, help="Path to reference face image")
+    parser.add_argument("--input", type=str, default='input/Test_image.png', help="Path to reference face image")
     parser.add_argument("--config", type=str, default="configs/default.yaml", help="Path to YAML config file")
-    parser.add_argument("--run-name", type=str, default=None, help="Name for output run directory (auto-generated if not set)")
-    parser.add_argument("--seed", type=int, default=None, help="Override random seed from config")
+    parser.add_argument("--run-name", type=str, default='test1', help="Name for output run directory (auto-generated if not set)")
+    parser.add_argument("--seed", type=int, default=1234, help="Override random seed from config")
     return parser.parse_args()
 
 

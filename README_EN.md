@@ -1,6 +1,7 @@
 # OneShot-ID: Identity-Consistent Face Generation & Verification
 
-中文说明: [README.md](README.md)
+**Default README**: [README.md](README.md)  
+中文说明: [README_ZH.md](README_ZH.md)
 
 OneShot-ID is an end-to-end pipeline for **identity-consistent face image generation from a single reference photo**, plus **quantitative identity verification**.
 
@@ -28,9 +29,12 @@ Edit `configs/default.yaml`:
 
 - **Device / seed**: `runtime.device`, `runtime.seed`
 - **Models**:
-  - `models.insightface_dir`
-  - `models.instantid_dir`
-  - `models.sdxl_path`
+  - `models.insightface_dir`  
+    - Download (AntelopeV2): [antelopev2.zip](https://github.com/deepinsight/insightface/releases/download/v0.7/antelopev2.zip)
+  - `models.instantid_dir`  
+    - Download: [InstantX/InstantID](https://huggingface.co/InstantX/InstantID)
+  - `models.sdxl_path`  
+    - Example SDXL checkpoint: [Juggernaut XL (Civitai)](https://civitai.com/models/133005/juggernaut-xl)
 
 The repo ships with the author’s local absolute paths; update them to match your machine.
 

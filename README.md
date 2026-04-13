@@ -1,36 +1,20 @@
-# OneShot-ID: Identity-Consistent face Generation & Verification
+# OneShot-ID: Identity-Consistent Face Generation & Verification
 
-**English README**: [README_EN.md](README_EN.md)
+中文说明: [README_ZH.md](README_ZH.md)
 
-本项目利用 InstantID 和 SDXL 实现基于单张参考图的身份一致性人脸图像生成，并提供可量化的身份相似度验证。
+OneShot-ID is an end-to-end pipeline for **identity-consistent face image generation from a single reference photo**, plus **quantitative identity verification**.
 
-## 1. 项目结构
+- **Generation**: InstantID (IP-Adapter identity + ControlNet landmarks) on an SDXL checkpoint
+- **Verification**: InsightFace (AntelopeV2) embeddings + **cosine similarity** threshold
+- **Deliverable**: A final set of **8–12 qualified images** (by default) under `outputs/runs/<run_name>/kept/`, with CSV/JSON/Markdown reports
 
-```
-OneShot-ID/
-├── app/                    # CLI 入口
-│   ├── run_generate.py     # 仅生成候选图
-│   ├── run_validate.py     # 仅校验已有候选目录
-│   └── run_pipeline.py     # 端到端：生成 → 校验 → 筛选 → 报表
-├── configs/                # 默认配置（设备、模型路径、阈值与轮次）
-├── outputs/                # 运行输出（见下文目录结构）
-├── src/                    # 核心库
-│   ├── generation/         # InstantID 生成
-│   ├── prompts/            # Prompt 变体库
-│   ├── validation/         # InsightFace 校验
-│   ├── reporting/          # CSV / JSON / Markdown 报表
-│   ├── pipeline.py         # 流水线编排
-│   └── config.py           # 配置加载
-├── docs/
-│   ├── project_documentation_zh.md   # 中文系统说明（技术与运维）
-│   └── project_documentation_en.md   # 英文系统说明（同上）
-├── requirements.txt
-└── tests/
-```
+For deeper technical details, see:
+- [docs/project_documentation_en.md](docs/project_documentation_en.md)
+- [docs/project_documentation_zh.md](docs/project_documentation_zh.md)
 
-更完整的技术说明见 [docs/project_documentation_zh.md](docs/project_documentation_zh.md) 与 [docs/project_documentation_en.md](docs/project_documentation_en.md)。
+## Quick start
 
-## 2. 环境设置（本地）
+### 1) Environment
 
 ```bash
 conda create -n py312_cu121 python=3.12 -y
@@ -38,44 +22,54 @@ conda activate py312_cu121
 pip install -r requirements.txt
 ```
 
-默认在配置中将 GPU 设为 `cuda:1`（可在 `configs/default.yaml` 的 `runtime.device` 中修改）。
+### 2) Configure model paths (required)
 
-参考图可以放在任意路径（推荐自建 `data/` 目录），运行时用 `--input` 指向该文件即可。
+Edit `configs/default.yaml`:
 
-## 3. 模型路径
+- **Device / seed**: `runtime.device`, `runtime.seed`
+- **Models**
+  - `models.insightface_dir`  
+    - Download (AntelopeV2): [antelopev2.zip](https://github.com/deepinsight/insightface/releases/download/v0.7/antelopev2.zip)
+  - `models.instantid_dir`  
+    - Download: [InstantX/InstantID](https://huggingface.co/InstantX/InstantID)
+  - `models.sdxl_path`  
+    - Example SDXL checkpoint: [Juggernaut XL (Civitai)](https://civitai.com/models/133005/juggernaut-xl)
 
-请确保权重位于配置中的路径（可按机器调整 `configs/default.yaml`）：
+The repo ships with the author’s local absolute paths; update them to match your machine.
 
-- **InsightFace**：`models.insightface_dir`（需 `antelopev2` 等）
-- **InstantID**：`models.instantid_dir`（ControlNet + `ip-adapter.bin` 等）
-- **SDXL**：`models.sdxl_path`（本项目示例为 juggernautXL_ragnarokBy）
+### 3) Prepare a reference image
 
-## 4. 配置文件说明（`configs/default.yaml`）
+Put the reference image anywhere (many users create a `data/` folder). The pipeline works best with:
+- a clear, front-facing single face
+- no heavy occlusion, extreme blur, or multiple prominent faces
 
-| 区块 | 作用 |
-| --- | --- |
-| `runtime` | `device`（如 `cuda:1`）、`seed` |
-| `models` | `insightface_dir`、`instantid_dir`、`sdxl_path` |
-| `generation` | `min_keep` / `max_keep`（最终保留 8–12 张）、`candidates_per_round`、`max_rounds`（不足时重试轮数） |
-| `validation` | `similarity_threshold`（余弦相似度阈值，默认 0.45） |
-| `output` | `base_dir`（通常为 `outputs`，其下为 `runs/<run_name>/`） |
+## Run the pipeline (recommended)
 
-## 5. 命令行工具
-
-### 5.1 端到端（推荐）
+End-to-end (generate → validate → select → report):
 
 ```bash
-python app/run_pipeline.py --input data/my_face.jpg --output_name test_run_01
-python app/run_pipeline.py --input data/my_face.jpg --config configs/default.yaml --seed 123
+python app/run_pipeline.py --input data/my_face.jpg --output_name my_run_01
 ```
 
-### 5.2 仅生成候选图
+Optional:
+
+```bash
+python app/run_pipeline.py --input data/my_face.jpg --config configs/default.yaml --seed 1234
+```
+
+**Success condition**: the pipeline returns exit code 0 only if final `kept/` count is at least `generation.min_keep` (default 8).
+
+## Other CLIs
+
+### Generate candidates only
 
 ```bash
 python app/run_generate.py --input data/my_face.jpg --config configs/default.yaml --run-name my_gen --seed 42
 ```
 
-### 5.3 仅校验候选目录
+This writes candidates + a manifest, but does not run selection into `kept/`.
+
+### Validate an existing candidate folder only
 
 ```bash
 python app/run_validate.py \
@@ -85,49 +79,54 @@ python app/run_validate.py \
   --report-dir outputs/runs/my_gen/reports
 ```
 
-校验阶段会写入 `validation_results.csv`、`validation_summary.json` 与 **`validation_report.md`**（Markdown 人类可读汇总）。
+## Where outputs are written
 
-## 6. 输出目录结构
-
-单次运行在 `outputs/runs/<run_name>/` 下：
+By default, all runs go under `outputs/runs/<run_name>/` (config key: `output.base_dir`):
 
 ```
 outputs/runs/<run_name>/
-├── candidates/              # 各轮生成的候选图
+├── candidates/               # All generated candidates (possibly across rounds)
 │   └── candidate_manifest.jsonl
-├── faces/                   # 候选图中被选中的“最大人脸”裁剪（便于人工回看）
-├── kept/                      # 最终保留（通过阈值且入选 8–12 张）
-├── rejected/                  # 未通过阈值，或通过但超出 max_keep 的副本
+├── faces/                    # Cropped largest-face previews per prompt_id (for human review)
+├── kept/                     # Final qualified images (passed threshold and selected into 8–12)
+├── rejected/                 # Failed candidates + extra passes beyond max_keep
 └── reports/
     ├── validation_results.csv
     ├── validation_summary.json
     └── validation_report.md
 ```
 
-## 7. 最终保留策略（8–12 张）
+**Qualified / final images** are in **`kept/`**.
 
-- 目标：至少 `min_keep`（默认 8）、至多 `max_keep`（默认 12）张 **通过** 相似度阈值的图。
-- 每轮最多生成 `candidates_per_round`（默认 12）个 prompt 变体；若已通过数仍低于 `min_keep`，会用 **可重试** 的 prompt 继续生成，最多 `max_rounds`（默认 3）轮。
-- 若通过数 **超过** `max_keep`：按相似度从高到低保留前 `max_keep` 张，其余通过样本复制到 `rejected/`。
-- 流水线成功退出表示最终 `kept/` 数量 ≥ `min_keep`；否则为失败（需换参考图、调阈值或增轮次等）。
+## How identity verification works (high level)
 
-## 8. 失败与多脸行为（摘要）
+- The reference face is analyzed with InsightFace to get an embedding.
+- Each candidate image is analyzed; if multiple faces exist, the **largest** face is used.
+- Cosine similarity is computed and compared against `validation.similarity_threshold` (default `0.45`).
+- Results are written to:
+  - **`reports/validation_results.csv`** (per-image: status, failure_reason, similarity, face_count, prompt_id)
+  - **`reports/validation_summary.json`** (aggregated stats and failure reasons)
+  - **`reports/validation_report.md`** (human-readable report)
 
-- **参考图无人脸**：`run_pipeline` / `run_generate` / `run_validate` 在参考端无法提取人脸时会报错退出。
-- **候选图无人脸**：`failed_no_face`，图会进入 `rejected/`。
-- **相似度低于阈值**：`failed_low_similarity`；多脸且低于阈值时为 `failed_multi_face_low_similarity`。
-- **多脸**：检测上取 **面积最大** 的一张脸做嵌入与相似度；多脸会作为异常信息参与状态与报表（详见中文/英文系统文档）。
+## Configuration cheatsheet (`configs/default.yaml`)
 
-## 9. 运行测试
+- **Identity keep policy**
+  - `generation.min_keep`: minimum number of passing images required (default 8)
+  - `generation.max_keep`: cap on finals (default 12); if more pass, keep the top by similarity
+  - `generation.max_rounds`: retry rounds when passed < min_keep
+- **Verification**
+  - `validation.similarity_threshold`: cosine similarity cutoff
+- **Outputs**
+  - `output.base_dir`: output root directory (default `outputs`)
+
+## Troubleshooting
+
+- **“No face detected in reference image”**: change to a clearer reference image (single face, higher resolution, less occlusion).
+- **Low similarity / many rejects**: adjust `validation.similarity_threshold`, try a different SDXL checkpoint, or use a better reference photo.
+- **Wrong GPU**: set `runtime.device` (default is `cuda:1`).
+
+## Tests
 
 ```bash
 pytest tests/
 ```
-
-## 10. 报表与文档
-
-- **CSV**：逐图 `status`、`failure_reason`、`similarity`、`face_count` 等。
-- **JSON**：批次汇总（通过/失败数、相似度统计、`failure_reasons` 分布）。
-- **Markdown（`validation_report.md`）**：汇总表、失败原因统计、逐图表格，便于直接阅读或归档。
-
-详细字段与流程说明见 [docs/project_documentation_zh.md](docs/project_documentation_zh.md) 与 [docs/project_documentation_en.md](docs/project_documentation_en.md)。
