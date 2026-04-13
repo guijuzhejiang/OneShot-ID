@@ -19,6 +19,7 @@ class RunPaths:
     kept_dir: Path  # outputs/runs/<run_name>/kept/
     rejected_dir: Path  # outputs/runs/<run_name>/rejected/
     report_dir: Path  # outputs/runs/<run_name>/reports/
+    faces_dir: Path  # outputs/runs/<run_name>/faces/
 
 
 def build_run_paths(base_dir: Path, run_name: str) -> RunPaths:
@@ -30,8 +31,9 @@ def build_run_paths(base_dir: Path, run_name: str) -> RunPaths:
         kept_dir=run_dir / "kept",
         rejected_dir=run_dir / "rejected",
         report_dir=run_dir / "reports",
+        faces_dir=run_dir / "faces",
     )
-    for d in [paths.candidates_dir, paths.kept_dir, paths.rejected_dir, paths.report_dir]:
+    for d in [paths.candidates_dir, paths.kept_dir, paths.rejected_dir, paths.report_dir, paths.faces_dir]:
         d.mkdir(parents=True, exist_ok=True)
     return paths
 

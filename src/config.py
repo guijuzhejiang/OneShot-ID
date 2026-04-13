@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import yaml
+from typing import Optional
 from pydantic import BaseModel, Field, model_validator
 
 
@@ -15,6 +16,7 @@ class RuntimeSettings(BaseModel):
 class ModelPaths(BaseModel):
     insightface_dir: str = Field(..., min_length=1)
     instantid_dir: str = Field(..., min_length=1)
+    controlnet_depth_path: str = Field(..., min_length=1)
     sdxl_path: str = Field(..., min_length=1)
 
 
@@ -23,6 +25,9 @@ class GenerationSettings(BaseModel):
     max_keep: int = Field(..., ge=1, description="Maximum number of images to keep")
     candidates_per_round: int = Field(..., ge=1, description="Candidates generated per round")
     max_rounds: int = Field(..., ge=1, description="Maximum regeneration rounds")
+    scheduler_type: str = Field("EulerDiscreteScheduler", description="Scheduler/Sampler type")
+    override_steps: Optional[int] = Field(None, ge=1, description="Global override for inference steps")
+    override_guidance: Optional[float] = Field(None, ge=0.0, description="Global override for guidance scale")
 
     @model_validator(mode="after")
     def max_ge_min(self) -> GenerationSettings:

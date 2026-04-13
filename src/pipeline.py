@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from src.config import load_settings
 from src.generation.instantid_generator import InstantIDGenerator
 from src.prompts.prompt_bank import PromptSpec, get_prompt_specs, get_retryable_specs
 from src.reporting.report_builder import build_run_paths, write_all_reports
@@ -60,8 +61,6 @@ def _specs_for_round(
 
 class OneShotIDPipeline:
     def __init__(self, config_path: str = "configs/default.yaml") -> None:
-        from src.config import load_settings
-
         self.settings = load_settings(config_path)
 
     def run(
@@ -82,17 +81,12 @@ class OneShotIDPipeline:
         paths = build_run_paths(Path(settings.output.base_dir), run_name)
 
         analyzer = FaceAnalyzer(settings)
-        ref_analysis = analyzer.analyze_file(ref_image_path)
-        if ref_analysis.face_info is None:
-            print(
-                "Error: No usable face in reference image: "
-                f"{ref_analysis.failure_reason or 'unknown'}"
-            )
+        try:
+            ref_embedding, ref_landmarks, ref_face_image = analyzer.analyze_reference(ref_image_path)
+        except ValueError as e:
+            print(f"Error: {e}")
             return False
 
-        face_info = ref_analysis.face_info
-        ref_embedding = face_info.embedding
-        ref_landmarks = face_info.landmarks
         threshold = settings.validation.similarity_threshold
 
         results_by_prompt: dict[str, ValidationResult] = {}
@@ -110,6 +104,7 @@ class OneShotIDPipeline:
 
                 round_base_seed = settings.runtime.seed + round_idx * 10_000
                 records = generator.generate_batch(
+                    ref_face_image,
                     ref_embedding,
                     ref_landmarks,
                     specs,
@@ -118,7 +113,10 @@ class OneShotIDPipeline:
                 )
 
                 for rec in records:
-                    analysis = analyzer.analyze_file(rec.image_path)
+                    analysis = analyzer.analyze_file(
+                        rec.image_path,
+                        save_face_to=paths.faces_dir / f"{rec.prompt_id}_face.png"
+                    )
                     vr = validate_single(
                         ref_embedding,
                         analysis,

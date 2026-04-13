@@ -14,6 +14,8 @@ if TYPE_CHECKING:
     from src.config import Settings
     from src.prompts.prompt_bank import PromptSpec
 
+from diffusers import ControlNetModel
+from src.generation.pipeline_stable_diffusion_xl_instantid import StableDiffusionXLInstantIDPipeline, draw_kps
 
 @dataclass
 class GenerationRecord:
@@ -41,8 +43,6 @@ class InstantIDGenerator:
 
     def _load_pipeline(self) -> None:
         """Load SDXL + ControlNet + IP-Adapter pipeline."""
-        from diffusers import ControlNetModel, StableDiffusionXLControlNetPipeline
-
         dtype = torch.float16 if str(self.device).startswith("cuda") else torch.float32
         instantid_dir = self._settings.models.instantid_dir
         sdxl_path = self._settings.models.sdxl_path
@@ -52,23 +52,57 @@ class InstantIDGenerator:
             subfolder="ControlNetModel",
             torch_dtype=dtype,
         )
+        # controlnet = ControlNetModel.from_pretrained(f'{instantid_dir}/ControlNetModel', torch_dtype=dtype)
         load_kw: dict[str, Any] = {}
         if dtype == torch.float16:
             load_kw["variant"] = "fp16"
-        pipe = StableDiffusionXLControlNetPipeline.from_single_file(
+        pipe = StableDiffusionXLInstantIDPipeline.from_single_file(
             sdxl_path,
             controlnet=controlnet,
             torch_dtype=dtype,
             **load_kw,
         )
-        pipe.load_ip_adapter_instantid(
-            instantid_dir,
-            subfolder="",
-            weight_name="ip-adapter.bin",
-        )
-        pipe.set_ip_adapter_scale(0.8)
+        # pipe = StableDiffusionXLInstantIDPipeline.from_pretrained(
+        #     sdxl_path,
+        #     controlnet=controlnet,
+        #     torch_dtype=dtype,
+        #     **load_kw
+        # )
+        pipe.load_ip_adapter_instantid(f"{instantid_dir}/ip-adapter.bin")
+        # pipe.set_ip_adapter_scale(1)
+        self._set_scheduler(pipe)
         pipe.to(self.device)
         self._pipe = pipe
+
+    def _set_scheduler(self, pipe: Any) -> None:
+        """Set the pipeline scheduler according to config."""
+        from diffusers import (
+            DPMSolverMultistepScheduler,
+            EulerDiscreteScheduler,
+            EulerAncestralDiscreteScheduler,
+        )
+
+        stype = self._settings.generation.scheduler_type
+        config = pipe.scheduler.config
+
+        if stype == "DPM++ 2M SDE":
+            pipe.scheduler = DPMSolverMultistepScheduler.from_config(
+                config,
+                use_karras_sigmas=True,
+                algorithm_type="sde-dpmsolver++",
+            )
+        elif stype == "DPM++ 2M":
+            pipe.scheduler = DPMSolverMultistepScheduler.from_config(
+                config,
+                use_karras_sigmas=True,
+            )
+        elif stype == "Euler a":
+            pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(config)
+        elif stype == "Euler":
+            pipe.scheduler = EulerDiscreteScheduler.from_config(config)
+        else:
+            # Fallback or keep default
+            pass
 
     def _draw_keypoints(
         self,
@@ -109,6 +143,7 @@ class InstantIDGenerator:
 
     def generate_single(
         self,
+        face_image: Image.Image | np.ndarray,
         face_embedding: np.ndarray,
         face_landmarks: np.ndarray,
         prompt_spec: PromptSpec,
@@ -125,16 +160,20 @@ class InstantIDGenerator:
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        kps_image = self._draw_keypoints(face_landmarks)
+        # kps_image = self._draw_keypoints(face_landmarks)
+        # kps_image = draw_kps(face_image, face_landmarks)
+        # kps_image.save(output_path.with_name(output_path.stem + "_kps.png"))
         generator = torch.Generator(device=self.device).manual_seed(int(seed))
 
         out = self._pipe(
             prompt=prompt_spec.positive_prompt,
             negative_prompt=prompt_spec.negative_prompt,
             image_embeds=emb,
-            image=kps_image,
-            num_inference_steps=prompt_spec.num_inference_steps,
-            guidance_scale=prompt_spec.guidance_scale,
+            image=face_landmarks,
+            controlnet_conditioning_scale=0.2,
+            ip_adapter_scale=0.4,
+            num_inference_steps=self._settings.generation.override_steps or prompt_spec.num_inference_steps,
+            guidance_scale=self._settings.generation.override_guidance or prompt_spec.guidance_scale,
             generator=generator,
         )
         image = out.images[0]
@@ -150,6 +189,7 @@ class InstantIDGenerator:
 
     def generate_batch(
         self,
+        face_image: Image.Image | np.ndarray,
         face_embedding: np.ndarray,
         face_landmarks: np.ndarray,
         prompt_specs: list[PromptSpec],
@@ -165,6 +205,7 @@ class InstantIDGenerator:
             path = output_dir / f"{spec.prompt_id}.png"
             records.append(
                 self.generate_single(
+                    face_image,
                     face_embedding,
                     face_landmarks,
                     spec,

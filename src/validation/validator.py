@@ -12,8 +12,14 @@ from src.validation.result_schema import ValidationResult, ValidationSummary
 
 
 def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
-    """Compute cosine similarity between two L2-normalized embedding vectors."""
-    return float(np.dot(np.asarray(a, dtype=np.float64).ravel(), np.asarray(b, dtype=np.float64).ravel()))
+    """Compute cosine similarity between two embedding vectors."""
+    a = np.asarray(a, dtype=np.float64).ravel()
+    b = np.asarray(b, dtype=np.float64).ravel()
+    norm_a = np.linalg.norm(a)
+    norm_b = np.linalg.norm(b)
+    if norm_a == 0.0 or norm_b == 0.0:
+        return 0.0
+    return float(np.dot(a, b) / (norm_a * norm_b))
 
 
 def validate_single(

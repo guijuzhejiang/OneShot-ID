@@ -8,8 +8,14 @@ import os
 import sys
 from pathlib import Path
 
-# Add project root to path
+# Add project root to path — must come before any src.* imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from src.config import load_settings
+from src.generation.instantid_generator import InstantIDGenerator
+from src.prompts.prompt_bank import get_prompt_specs
+from src.reporting.report_builder import build_run_paths
+from src.validation.face_analyzer import FaceAnalyzer
 
 
 def parse_args() -> argparse.Namespace:
@@ -36,8 +42,6 @@ def main() -> None:
         print(f"Error: Config file {args.config} not found.", file=sys.stderr)
         sys.exit(1)
 
-    from src.config import load_settings
-
     settings = load_settings(str(config_path))
 
     if args.seed is not None:
@@ -48,31 +52,23 @@ def main() -> None:
         )
 
     run_name = args.run_name or f"gen_{input_path.stem}"
-
-    from src.reporting.report_builder import build_run_paths
-
     paths = build_run_paths(Path(settings.output.base_dir), run_name)
 
-    from src.validation.face_analyzer import FaceAnalyzer
-
     analyzer = FaceAnalyzer(settings)
-    ref_result = analyzer.analyze_file(str(input_path))
-
-    if ref_result.face_info is None:
+    try:
+        ref_embedding, ref_landmarks, ref_face_image = analyzer.analyze_reference(str(input_path))
+    except ValueError:
         print(f"Error: No face detected in reference image {args.input}", file=sys.stderr)
         sys.exit(1)
 
-    from src.prompts.prompt_bank import get_prompt_specs
-
     specs = get_prompt_specs()
-
-    from src.generation.instantid_generator import InstantIDGenerator
 
     generator = InstantIDGenerator(settings)
     try:
         records = generator.generate_batch(
-            face_embedding=ref_result.face_info.embedding,
-            face_landmarks=ref_result.face_info.landmarks,
+            ref_face_image,
+            ref_embedding,
+            ref_landmarks,
             prompt_specs=specs,
             base_seed=settings.runtime.seed,
             output_dir=paths.candidates_dir,

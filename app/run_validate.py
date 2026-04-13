@@ -8,7 +8,13 @@ import os
 import sys
 from pathlib import Path
 
+# Add project root to path — must come before any src.* imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from src.config import load_settings
+from src.reporting.report_builder import write_all_reports
+from src.validation.face_analyzer import FaceAnalyzer
+from src.validation.validator import summarize_results, validate_single
 
 
 def parse_args() -> argparse.Namespace:
@@ -41,23 +47,17 @@ def main() -> None:
         print(f"Error: Candidate directory not found: {cand_dir}", file=sys.stderr)
         sys.exit(1)
 
-    from src.config import load_settings
-
     settings = load_settings(args.config)
 
     report_dir = Path(args.report_dir) if args.report_dir else cand_dir.parent / "reports"
     report_dir.mkdir(parents=True, exist_ok=True)
 
-    from src.validation.face_analyzer import FaceAnalyzer
-
     analyzer = FaceAnalyzer(settings)
-    ref_result = analyzer.analyze_file(str(ref_path))
-
-    if ref_result.face_info is None:
+    try:
+        ref_embedding, _, _ = analyzer.analyze_reference(str(ref_path))
+    except ValueError:
         print(f"Error: No face detected in reference image {ref_path}", file=sys.stderr)
         sys.exit(1)
-
-    ref_embedding = ref_result.face_info.embedding
 
     manifest_path = cand_dir / "candidate_manifest.jsonl"
     prompt_id_map: dict[str, str] = {}
@@ -80,8 +80,6 @@ def main() -> None:
         print(f"Error: No image files found in {cand_dir}", file=sys.stderr)
         sys.exit(1)
 
-    from src.validation.validator import summarize_results, validate_single
-
     results = []
     threshold = settings.validation.similarity_threshold
 
@@ -93,8 +91,6 @@ def main() -> None:
         status_icon = "✓" if result.status == "passed" else "✗"
         sim_str = f"{result.similarity:.4f}" if result.similarity is not None else "N/A"
         print(f"  {status_icon} {img_path.name}: similarity={sim_str} [{result.status}]")
-
-    from src.reporting.report_builder import write_all_reports
 
     summary = summarize_results(results)
     write_all_reports(results, summary, report_dir, run_name=args.run_name)

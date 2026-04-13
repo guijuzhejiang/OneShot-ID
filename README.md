@@ -1,5 +1,7 @@
 # OneShot-ID: Identity-Consistent face Generation & Verification
 
+**English README**: [README_EN.md](README_EN.md)
+
 本项目利用 InstantID 和 SDXL 实现基于单张参考图的身份一致性人脸图像生成，并提供可量化的身份相似度验证。
 
 ## 1. 项目结构
@@ -37,13 +39,15 @@ pip install -r requirements.txt
 
 默认在配置中将 GPU 设为 `cuda:1`（可在 `configs/default.yaml` 的 `runtime.device` 中修改）。
 
+参考图可以放在任意路径（推荐自建 `data/` 目录），运行时用 `--input` 指向该文件即可。
+
 ## 3. 模型路径
 
 请确保权重位于配置中的路径（可按机器调整 `configs/default.yaml`）：
 
 - **InsightFace**：`models.insightface_dir`（需 `antelopev2` 等）
 - **InstantID**：`models.instantid_dir`（ControlNet + `ip-adapter.bin` 等）
-- **SDXL**：`models.sdxl_path`（本项目示例为 RealVisXL V4.0 Lightning）
+- **SDXL**：`models.sdxl_path`（本项目示例为 juggernautXL_ragnarokBy）
 
 ## 4. 配置文件说明（`configs/default.yaml`）
 
@@ -90,6 +94,7 @@ python app/run_validate.py \
 outputs/runs/<run_name>/
 ├── candidates/              # 各轮生成的候选图
 │   └── candidate_manifest.jsonl
+├── faces/                   # 候选图中被选中的“最大人脸”裁剪（便于人工回看）
 ├── kept/                      # 最终保留（通过阈值且入选 8–12 张）
 ├── rejected/                  # 未通过阈值，或通过但超出 max_keep 的副本
 └── reports/

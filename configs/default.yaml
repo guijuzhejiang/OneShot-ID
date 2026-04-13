@@ -5,13 +5,18 @@ runtime:
 models:
   insightface_dir: "/media/zzg/GJ_disk01/pretrained_model/stable-diffusion-webui/models/insightface"
   instantid_dir: "/media/zzg/GJ_disk01/pretrained_model/InstantX/InstantID"
-  sdxl_path: "/media/zzg/GJ_disk01/pretrained_model/stable-diffusion-webui/models/Stable-diffusion/SDXL/realvisxlV40_v40LightningBakedvae.safetensors"
+  controlnet_depth_path: "/media/zzg/GJ_disk01/pretrained_model/diffusers/controlnet-depth-sdxl-1.0-small"
+  sdxl_path: "/media/zzg/GJ_disk01/pretrained_model/stable-diffusion-webui/models/Stable-diffusion/SDXL/juggernautXL_ragnarokBy.safetensors"
+#  sdxl_path: "/media/zzg/GJ_disk01/pretrained_model/stabilityai/stable-diffusion-xl-base-1.0"
 
 generation:
   min_keep: 8
   max_keep: 12
   candidates_per_round: 12
   max_rounds: 3
+  scheduler_type: "DPM++ 2M SDE"
+  override_steps: null
+  override_guidance: null
 
 validation:
   similarity_threshold: 0.45
