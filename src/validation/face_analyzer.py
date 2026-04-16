@@ -12,6 +12,7 @@ from diffusers.utils import load_image
 
 from src.generation.pipeline_stable_diffusion_xl_instantid import draw_kps, resize_img
 from src.utils.face_selection import FaceInfo, select_largest_face
+from insightface.app import FaceAnalysis
 
 
 def _parse_ctx_id(device: str) -> int:
@@ -54,8 +55,6 @@ class FaceAnalyzer:
 
     def _ensure_loaded(self) -> None:
         if self._app is None:
-            from insightface.app import FaceAnalysis
-
             self._app = FaceAnalysis(
                 name="antelopev2",
                 root=self._insightface_dir,
